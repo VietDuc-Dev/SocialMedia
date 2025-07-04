@@ -4,12 +4,13 @@ import SessionModel from "../models/session.model";
 import UserModel from "../models/user.model";
 import VerificationCodeModel from "../models/verificationCode.model";
 import { BadRequestException, UnauthorizedException } from "../utils/appError";
-import { oneYearFromNow } from "../utils/date";
+import { ONE_DAY_MS, oneYearFromNow, thirtyDaysFromNow } from "../utils/date";
 import { getVerifyEmailTemplate } from "../utils/emailTempaletes";
 import {
   RefreshTokenPayload,
   refreshTokenSignOptions,
   signJwtToken,
+  verifyToken,
 } from "../utils/jwt";
 import { sendMail } from "../utils/sendMail";
 
@@ -99,3 +100,42 @@ export const loginUserService = async (body: {
   }
 };
 
+export const refreshUserAccessTokenService = async (refreshToken: string) => {
+  const { payload } = verifyToken<RefreshTokenPayload>(refreshToken, {
+    secret: refreshTokenSignOptions.secret,
+  });
+  if (!payload) {
+    throw new UnauthorizedException("Invalid refresh token");
+  }
+
+  const session = await SessionModel.findById(payload.sessionId);
+  if (!session) {
+    throw new UnauthorizedException("Session not found or revoked");
+  }
+
+  const now = Date.now();
+  const isExpired = session.expiresAt.getTime() < now;
+  if (isExpired) {
+    throw new UnauthorizedException("Session expired");
+  }
+
+  const sessionNeedsRefresh = session.expiresAt.getTime() - now <= ONE_DAY_MS;
+  if (sessionNeedsRefresh) {
+    session.expiresAt = thirtyDaysFromNow();
+    await session.save();
+  }
+
+  const newRefreshToken = sessionNeedsRefresh
+    ? signJwtToken({ sessionId: session._id }, refreshTokenSignOptions)
+    : undefined;
+
+  const accessToken = signJwtToken({
+    userId: session?.userId,
+    sessionId: session._id,
+  });
+
+  return {
+    accessToken,
+    newRefreshToken,
+  };
+};

@@ -2,7 +2,7 @@ import { CookieOptions, Response } from "express";
 import { fifteenMinutesFromNow, thirtyDaysFromNow } from "./date";
 import { config } from "../config/app.config";
 
-export const REFRESH_PATH = "/auth/refresh";
+export const REFRESH_PATH = "/api/auth/refresh";
 const secure = config.NODE_ENV !== "development";
 
 const defaults: CookieOptions = {

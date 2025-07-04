@@ -3,6 +3,7 @@ import { HTTPSTATUS } from "../config/http.config";
 import { AppError } from "../utils/appError";
 import { z, ZodError } from "zod";
 import { ErrorCodeEnum } from "../enums/error-code.enum";
+import { clearAuthCookies, REFRESH_PATH } from "../utils/cookies";
 
 const formatZodError = (res: Response, error: z.ZodError) => {
   const errors = error?.issues?.map((err) => ({
@@ -29,6 +30,10 @@ export const errorHandler: ErrorRequestHandler = (
     return res.status(HTTPSTATUS.BAD_REQUEST).json({
       message: "Invalid JSON format. Please check your request body.",
     });
+  }
+
+  if (req.path === REFRESH_PATH) {
+    clearAuthCookies(res);
   }
 
   if (error instanceof ZodError) {
