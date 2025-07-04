@@ -13,6 +13,7 @@ export interface UserDocument extends Document {
   following: mongoose.Types.ObjectId | null;
   posts: mongoose.Types.ObjectId | null;
   bookmarks: mongoose.Types.ObjectId | null;
+  verified: boolean;
   lastLogin: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -50,12 +51,17 @@ const userSchema = new Schema<UserDocument>(
     gender: {
       type: String,
       enum: Object.values(GenderEnum),
-      required: true,
+      default: null,
     },
     followers: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     following: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     posts: { type: mongoose.Schema.Types.ObjectId, ref: "Post" },
     bookmarks: { type: mongoose.Schema.Types.ObjectId, ref: "Post" },
+    verified: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
     lastLogin: {
       type: Date,
       default: null,

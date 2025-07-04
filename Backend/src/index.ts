@@ -18,17 +18,18 @@ const BASE_PATH = config.BASE_PATH;
 app.use(express.json());
 app.use(cookieParser());
 app.use(urlencoded({ extended: true }));
+
 app.use(cors({ origin: config.FRONTEND_ORIGIN, credentials: true }));
 
 app.get(
   `/`,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     throw new BadRequestException(
-      "this is a bad request",
+      "This is a bad request",
       ErrorCodeEnum.AUTH_INVALID_TOKEN
     );
     return res.status(HTTPSTATUS.OK).json({
-      message: "Hello nodejs express",
+      message: "Social Media App",
     });
   })
 );
