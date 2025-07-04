@@ -3,9 +3,23 @@ import { VerificationCodeEnum } from "../enums/verification-code.emun";
 import SessionModel from "../models/session.model";
 import UserModel from "../models/user.model";
 import VerificationCodeModel from "../models/verificationCode.model";
-import { BadRequestException, UnauthorizedException } from "../utils/appError";
-import { ONE_DAY_MS, oneYearFromNow, thirtyDaysFromNow } from "../utils/date";
-import { getVerifyEmailTemplate } from "../utils/emailTempaletes";
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from "../utils/appError";
+import { hashValue } from "../utils/bcrypy";
+import {
+  fiveMinutesAgo,
+  ONE_DAY_MS,
+  oneHourFromNow,
+  oneYearFromNow,
+  thirtyDaysFromNow,
+} from "../utils/date";
+import {
+  getPasswordResetTemplate,
+  getVerifyEmailTemplate,
+} from "../utils/emailTempaletes";
 import {
   RefreshTokenPayload,
   refreshTokenSignOptions,
@@ -42,7 +56,7 @@ export const registerUserService = async (body: {
       expiresAt: oneYearFromNow(),
     });
 
-    const url = `${config.FRONTEND_ORIGIN}/email/verify/${verificationCode._id}`;
+    const url = `${config.BASE_PATH}/api/email/verify/${verificationCode._id}`;
 
     const { error } = await sendMail({
       to: user.email,
@@ -138,4 +152,102 @@ export const refreshUserAccessTokenService = async (refreshToken: string) => {
     accessToken,
     newRefreshToken,
   };
+};
+
+export const verifyEmailService = async (code: string) => {
+  const validCode = await VerificationCodeModel.findOne({
+    _id: code,
+    type: VerificationCodeEnum.EmailVerification,
+    expiresAt: { $gt: new Date() },
+  });
+  if (!validCode) {
+    throw new NotFoundException("Invalid or expired verification code");
+  }
+
+  const updatedUser = await UserModel.findByIdAndUpdate(
+    validCode.userId,
+    { verified: true },
+    { new: true }
+  );
+  if (!updatedUser) {
+    throw new BadRequestException("Failed to verify email");
+  }
+
+  await validCode.deleteOne();
+
+  return {
+    user: updatedUser.omitPassword(),
+  };
+};
+
+export const sendPasswordResetEmailService = async (email: string) => {
+  try {
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    const fiveMinAgo = fiveMinutesAgo();
+    const count = await VerificationCodeModel.countDocuments({
+      userId: user._id,
+      type: VerificationCodeEnum.PasswordReset,
+      createdAt: { $gt: fiveMinAgo },
+    });
+    if (count >= 1) {
+      throw new BadRequestException("Too many request, please try again later");
+    }
+
+    const expiresAt = oneHourFromNow();
+    const verificationCode = await VerificationCodeModel.create({
+      userId: user._id,
+      type: VerificationCodeEnum.PasswordReset,
+      expiresAt,
+    });
+
+    const url = `${config.BASE_PATH}/password/reset?code=${
+      verificationCode._id
+    }&exp=${expiresAt.getTime()}`;
+
+    const { data, error } = await sendMail({
+      to: email,
+      ...getPasswordResetTemplate(url),
+    });
+
+    if (!data?.id) {
+      throw new BadRequestException(`${error?.name} - ${error?.message}`);
+    }
+
+    return { url, emailId: data.id };
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const resetPasswordService = async (body: {
+  verificationCode: string;
+  password: string;
+}) => {
+  const { verificationCode, password } = body;
+
+  const validCode = await VerificationCodeModel.findOne({
+    _id: verificationCode,
+    type: VerificationCodeEnum.PasswordReset,
+    expiresAt: { $gt: new Date() },
+  });
+  if (!validCode) {
+    throw new NotFoundException("Invalid or expired verification code");
+  }
+
+  const updatedUser = await UserModel.findByIdAndUpdate(validCode.userId, {
+    password: await hashValue(password),
+  });
+  if (!updatedUser) {
+    throw new BadRequestException("Faided to reset password");
+  }
+
+  await validCode.deleteOne();
+
+  await SessionModel.deleteMany({ userid: validCode.userId });
+
+  return { user: updatedUser.omitPassword() };
 };

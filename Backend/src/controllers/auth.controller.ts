@@ -1,10 +1,19 @@
 import { NextFunction, Request, Response } from "express";
 import { asyncHandler } from "../middlewares/asyncHandler.middleware";
-import { loginSchema, registerSchema } from "../validation/auth.validation";
+import {
+  emailSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+  verificationCodeSchema,
+} from "../validation/auth.validation";
 import {
   loginUserService,
   refreshUserAccessTokenService,
   registerUserService,
+  resetPasswordService,
+  sendPasswordResetEmailService,
+  verifyEmailService,
 } from "../services/auth.service";
 import { HTTPSTATUS } from "../config/http.config";
 import {
@@ -92,5 +101,41 @@ export const logoutUserController = asyncHandler(
     return clearAuthCookies(res)
       .status(HTTPSTATUS.OK)
       .json({ message: "Logged out successfully" });
+  }
+);
+
+export const verifyEmailController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const verificationCode = verificationCodeSchema.parse(req.params.code);
+
+    await verifyEmailService(verificationCode);
+
+    return res
+      .status(HTTPSTATUS.OK)
+      .json({ message: "Email was successfully verified" });
+  }
+);
+
+export const sendPasswordResetController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const email = emailSchema.parse(req.body.email);
+
+    await sendPasswordResetEmailService(email);
+
+    return res
+      .status(HTTPSTATUS.OK)
+      .json({ message: "Password reset email sent" });
+  }
+);
+
+export const resetPasswordController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const body = resetPasswordSchema.parse(req.body);
+
+    await resetPasswordService(body);
+
+    return clearAuthCookies(res)
+      .status(HTTPSTATUS.OK)
+      .json({ message: "Password was reset successfully" });
   }
 );
