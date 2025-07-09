@@ -1,6 +1,7 @@
 import SessionModel, { SessionDocument } from "../models/session.model";
 import { BadRequestException } from "../utils/appError";
 
+// GET SESSIONS
 export const getSessionsService = async (userId: string, sessionId: string) => {
   const sessions = await SessionModel.find(
     { userId, expiresAt: { $gt: Date.now() } },
@@ -22,6 +23,7 @@ export const getSessionsService = async (userId: string, sessionId: string) => {
   return { sessions: formattedSessions };
 };
 
+// DELETE SESSION ID
 export const deleteSessionIdService = async (
   sessionId: string,
   userId: string

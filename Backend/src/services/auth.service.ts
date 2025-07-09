@@ -8,7 +8,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from "../utils/appError";
-import { hashValue } from "../utils/bcrypy";
+import { hashValue } from "../utils/bcrypt";
 import {
   fiveMinutesAgo,
   ONE_DAY_MS,
@@ -28,6 +28,7 @@ import {
 } from "../utils/jwt";
 import { sendMail } from "../utils/sendMail";
 
+// REGISTER USER
 export const registerUserService = async (body: {
   username: string;
   email: string;
@@ -76,6 +77,7 @@ export const registerUserService = async (body: {
   }
 };
 
+// LOGIN USER
 export const loginUserService = async (body: {
   email: string;
   password: string;
@@ -114,6 +116,7 @@ export const loginUserService = async (body: {
   }
 };
 
+// REFRESH TOKEN
 export const refreshUserAccessTokenService = async (refreshToken: string) => {
   const { payload } = verifyToken<RefreshTokenPayload>(refreshToken, {
     secret: refreshTokenSignOptions.secret,
@@ -154,6 +157,7 @@ export const refreshUserAccessTokenService = async (refreshToken: string) => {
   };
 };
 
+// VERIFY EMAIL
 export const verifyEmailService = async (code: string) => {
   const validCode = await VerificationCodeModel.findOne({
     _id: code,
@@ -180,6 +184,7 @@ export const verifyEmailService = async (code: string) => {
   };
 };
 
+// SEND PASSWORD RESET EMAIL
 export const sendPasswordResetEmailService = async (email: string) => {
   try {
     const user = await UserModel.findOne({ email });
@@ -223,6 +228,7 @@ export const sendPasswordResetEmailService = async (email: string) => {
   }
 };
 
+// RESET PASSWORD
 export const resetPasswordService = async (body: {
   verificationCode: string;
   password: string;

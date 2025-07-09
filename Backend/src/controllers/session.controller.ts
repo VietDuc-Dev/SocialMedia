@@ -7,6 +7,7 @@ import {
 import { HTTPSTATUS } from "../config/http.config";
 import { sessionSchema } from "../validation/session.validation";
 
+// [GET] GET SESSIONS
 export const getSessionsController = asyncHandler(
   async (req: Request, res: Response) => {
     const { userId, sessionId } = req;
@@ -20,6 +21,7 @@ export const getSessionsController = asyncHandler(
   }
 );
 
+// [DELETE] DELETE SESSION ID
 export const deleteSessionIdController = asyncHandler(
   async (req: Request, res: Response) => {
     const sessionId = sessionSchema.parse(req.params.id);

@@ -26,6 +26,7 @@ import { verifyToken } from "../utils/jwt";
 import SessionModel from "../models/session.model";
 import { UnauthorizedException } from "../utils/appError";
 
+// [POST] REGISTER USER
 export const registerUserController = asyncHandler(
   async (req: Request, res: Response) => {
     const body = registerSchema.parse({
@@ -41,6 +42,7 @@ export const registerUserController = asyncHandler(
   }
 );
 
+// [POST] LOGIN USER
 export const loginUserController = asyncHandler(
   async (req: Request, res: Response) => {
     const body = loginSchema.parse({
@@ -56,6 +58,7 @@ export const loginUserController = asyncHandler(
   }
 );
 
+// [GET] REFRESH TOKEN
 export const refreshTokenController = asyncHandler(
   async (req: Request, res: Response) => {
     const refreshToken = req.cookies.refreshToken as string | undefined;
@@ -82,6 +85,7 @@ export const refreshTokenController = asyncHandler(
   }
 );
 
+// [GET] LOGOUT USER
 export const logoutUserController = asyncHandler(
   async (req: Request, res: Response) => {
     const accessToken = req.cookies.accessToken as string | undefined;
@@ -104,6 +108,7 @@ export const logoutUserController = asyncHandler(
   }
 );
 
+// [GET] VERIFY EMAIL
 export const verifyEmailController = asyncHandler(
   async (req: Request, res: Response) => {
     const verificationCode = verificationCodeSchema.parse(req.params.code);
@@ -116,6 +121,7 @@ export const verifyEmailController = asyncHandler(
   }
 );
 
+// [POST] SEND PASSWORD RESET
 export const sendPasswordResetController = asyncHandler(
   async (req: Request, res: Response) => {
     const email = emailSchema.parse(req.body.email);
@@ -128,6 +134,7 @@ export const sendPasswordResetController = asyncHandler(
   }
 );
 
+// [POST] RESET PASSWORD
 export const resetPasswordController = asyncHandler(
   async (req: Request, res: Response) => {
     const body = resetPasswordSchema.parse(req.body);

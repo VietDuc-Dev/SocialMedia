@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 import { GenderEnum, GenderEnumType } from "../enums/user.enum";
-import { compareValue, hashValue } from "../utils/bcrypy";
+import { compareValue, hashValue } from "../utils/bcrypt";
 
 export interface UserDocument extends Document {
   username: string;
@@ -8,11 +8,11 @@ export interface UserDocument extends Document {
   password: string;
   profilePicture: string | null;
   bio: string | null;
-  gender: GenderEnumType;
-  followers: mongoose.Types.ObjectId | null;
-  following: mongoose.Types.ObjectId | null;
-  posts: mongoose.Types.ObjectId | null;
-  bookmarks: mongoose.Types.ObjectId | null;
+  gender: GenderEnumType | null;
+  followers: mongoose.Types.ObjectId[];
+  following: mongoose.Types.ObjectId[];
+  posts: mongoose.Types.ObjectId[];
+  bookmarks: mongoose.Types.ObjectId[];
   verified: boolean;
   lastLogin: Date | null;
   createdAt: Date;
@@ -52,11 +52,18 @@ const userSchema = new Schema<UserDocument>(
       type: String,
       enum: Object.values(GenderEnum),
       default: null,
+      required: false,
     },
-    followers: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    following: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    posts: { type: mongoose.Schema.Types.ObjectId, ref: "Post" },
-    bookmarks: { type: mongoose.Schema.Types.ObjectId, ref: "Post" },
+    followers: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "User", default: [] },
+    ],
+    following: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "User", default: [] },
+    ],
+    posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post", default: [] }],
+    bookmarks: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "Post", default: [] },
+    ],
     verified: {
       type: Boolean,
       required: true,
